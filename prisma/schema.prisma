@@ -1,0 +1,311 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  /// the url is override when the Prisma Client object is created
+  /// this url is used only for the "migrate" commands
+  url      = env("PRISMA_DB_DEV_URL")
+  /// url      = env("PRISMA_DB_URL")
+}
+
+model Product {
+  id                     String                   @id @default(uuid())
+  name                   String
+  um                     String?                  @default("UN")
+  categoryId             String?                  @map("category_id")
+  subCategoryId          String?                  @map("sub_category_id")
+  createdAt              DateTime                 @map("created_at")
+  updatedAt              DateTime                 @default(now()) @updatedAt @map("updated_at")
+  Category               Category?                @relation(fields: [categoryId], references: [id])
+  SubCategory            SubCategory?             @relation(fields: [subCategoryId], references: [id])
+  RecipesIngredientsLink RecipesIngredientsLink[]
+
+  @@map("products")
+}
+
+enum RecipeType {
+  semiFinished @map("semi-finished")
+  pizzaTopping @map("pizza-topping")
+}
+
+model Recipe {
+  id                     String                   @id @default(uuid())
+  name                   String
+  type                   RecipeType               @default(semiFinished)
+  description            String?
+  hasVariations          Boolean                  @default(false) @map("has_variations")
+  isVegetarian           Boolean                  @default(false) @map("is_vegetarian")
+  isGlutenFree           Boolean                  @default(false) @map("is_gluten_free")
+  createdAt              DateTime                 @map("created_at")
+  updatedAt              DateTime                 @default(now()) @updatedAt @map("updated_at")
+  ingredients            RecipesIngredient[]
+  RecipeVariation        RecipeVariation[]
+  RecipesIngredientsLink RecipesIngredientsLink[]
+
+  @@map("recipes")
+}
+
+model RecipesIngredient {
+  id           String   @id @default(uuid())
+  recipeId     String   @map("recipe_id")
+  ingredientId String   @map("ingredient_id")
+  um           String   @db.VarChar
+  quantity     String   @db.VarChar
+  createdAt    DateTime @map("created_at")
+  updatedAt    DateTime @default(now()) @updatedAt @map("updated_at")
+
+  recipe     Recipe                   @relation(fields: [recipeId], references: [id])
+  ingredient Ingredient               @relation(fields: [ingredientId], references: [id])
+  links      RecipesIngredientsLink[]
+
+  @@map("recipes_ingredients")
+}
+
+model Ingredient {
+  id        String              @id @default(uuid())
+  name      String              @db.VarChar
+  um        String              @db.VarChar
+  createdAt DateTime            @map("created_at")
+  updatedAt DateTime            @default(now()) @updatedAt @map("updated_at")
+  recipes   RecipesIngredient[]
+
+  @@map("ingredients")
+}
+
+model RecipesIngredientsLink {
+  id                 String  @id @default(uuid())
+  recipeIngredientId String  @map("recipe_ingredient_id")
+  type               String  @db.VarChar
+  productId          String?
+  recipeId           String?
+
+  recipeIngredient RecipesIngredient @relation(fields: [recipeIngredientId], references: [id])
+  Product          Product?          @relation(fields: [productId], references: [id])
+  Recipe           Recipe?           @relation(fields: [recipeId], references: [id])
+
+  @@map("recipes_ingredients_links")
+}
+
+model RecipeVariation {
+  id           String   @id @default(uuid())
+  recipeId     String   @map("recipe_id")
+  name         String
+  description  String
+  factorType   String   @map("factor_type")
+  factorNumber Float    @map("factor_number")
+  createdAt    DateTime @map("created_at")
+  updatedAt    DateTime @default(now()) @updatedAt @map("updated_at")
+  Recipe       Recipe   @relation(fields: [recipeId], references: [id])
+
+  @@map("recipes_variations")
+}
+
+model Category {
+  id            String        @id @default(uuid())
+  name          String
+  sortOrder     Int           @map("sort_order")
+  type          String
+  createdAt     DateTime      @map("created_at")
+  updatedAt     DateTime      @default(now()) @updatedAt @map("updated_at")
+  Products      Product[]
+  SubCategories SubCategory[] @relation("CategorySubCategories")
+  MenuItems     MenuItem[]
+
+  @@map("categories")
+}
+
+model SubCategory {
+  id         String     @id @default(uuid())
+  name       String
+  createdAt  DateTime   @map("created_at")
+  updatedAt  DateTime   @default(now()) @updatedAt @map("updated_at")
+  Categories Category[] @relation("CategorySubCategories")
+  Product    Product[]
+
+  @@map("sub_categories")
+}
+
+model MenuItem {
+  id              String                   @id @default(uuid())
+  name            String
+  description     String
+  ingredients     String
+  categoryId      String                   @map("category_id")
+  Category        Category                 @relation(fields: [categoryId], references: [id])
+  basePriceAmount Float                    @map("base_price_amount")
+  priceVariations MenuItemPriceVariation[]
+  visible         Boolean
+  mogoId          String                   @map("mogo_id")
+  createdAt       DateTime                 @map("created_at")
+  updatedAt       DateTime                 @default(now()) @updatedAt @map("updated_at")
+  tags            MenuItemTag[]
+  /// this track the position inside the menu
+  sortOrderIndex  Int                      @default(0) @map("sort_order_index")
+  notesPublic     String?                  @map("note_public")
+  MenuItemLike    MenuItemLike[]
+  MenuItemShare   MenuItemShare[]
+  MenuItemCost    MenuItemCost[]
+  imageId         String?                  @map("image_id")
+  MenuItemImage   MenuItemImage?           @relation(fields: [imageId], references: [id])
+
+  @@map("menu_items")
+}
+
+model MenuItemImage {
+  id               String     @id @default(uuid())
+  /// "secure_url": "https://res.cloudinary.com/dy8gw8ahl/image/upload/v1723138046/rvife3elpmmjojlnwypm.jpg",
+  secureUrl        String?    @map("secure_url")
+  /// "asset_folder": "cardapio"
+  assetFolder      String?    @map("asset_folder")
+  originalFileName String?    @map("original_file_name")
+  /// "display_name": "margherita"
+  displayName      String?    @map("display_name")
+  height           Float?     @map("height")
+  width            Float?     @map("width")
+  /// "thumbnail_url": "https://res.cloudinary.com/dy8gw8ahl/image/upload/c_limit,h_60,w_90/v1723138046/rvife3elpmmjojlnwypm.jpg"
+  thumbnailUrl     String?    @map("thumbnail_url")
+  format           String?    @map("format")
+  publicId         String?    @map("public_id")
+  MenuItem         MenuItem[]
+
+  @@map("menu_items_image")
+}
+
+model MenuItemPriceVariation {
+  id                 String    @id @default(uuid())
+  MenuItem           MenuItem? @relation(fields: [menuItemId], references: [id])
+  menuItemId         String?   @map("menu_item_id")
+  label              String
+  basePrice          Float     @default(0) @map("base_price")
+  amount             Float
+  discountPercentage Float     @map("discount_percentage")
+  showOnCardapio     Boolean   @default(false) @map("show_on_cardapio")
+  showOnCardapioAt   DateTime? @map("show_on_cardapio_at")
+  createdAt          DateTime  @map("created_at")
+  updatedAt          DateTime  @default(now()) @updatedAt @map("updated_at")
+  updatedBy          String?   @map("updated_by")
+  latestAmount       Float     @default(0)
+
+  @@map("menu_item_price_variations")
+}
+
+model MenuItemCost {
+  id          String    @id @default(uuid())
+  MenuItem    MenuItem? @relation(fields: [menuItemId], references: [id])
+  menuItemId  String?   @map("menu_item_id")
+  latestCost  Float     @map("latest_cost")
+  averageCost Float     @map("average_cost")
+
+  @@map("menu_item_cost")
+}
+
+model MenuItemLike {
+  id         String    @id @default(uuid())
+  MenuItem   MenuItem? @relation(fields: [menuItemId], references: [id])
+  menuItemId String?   @map("menu_item_id")
+  sessionId  String?   @map("session_id")
+  Session    Session?  @relation(fields: [sessionId], references: [id])
+  amount     Float     @default(0) @map("amount")
+  createdAt  DateTime  @map("created_at")
+  updatedAt  DateTime  @default(now()) @updatedAt @map("updated_at")
+  deletedAt  DateTime? @map("deleted_at")
+
+  @@map("menu_item_likes")
+}
+
+model MenuItemShare {
+  id         String    @id @default(uuid())
+  MenuItem   MenuItem? @relation(fields: [menuItemId], references: [id])
+  menuItemId String?   @map("menu_item_id")
+  sessionId  String?   @map("session_id")
+  Session    Session?  @relation(fields: [sessionId], references: [id])
+  createdAt  DateTime  @map("created_at")
+  updatedAt  DateTime  @default(now()) @updatedAt @map("updated_at")
+
+  @@map("menu_item_shares")
+}
+
+/// here we can manage: featured (recommended), vegetarian, kids, meat
+model MenuItemTag {
+  id         String    @id @default(uuid())
+  MenuItem   MenuItem? @relation(fields: [menuItemId], references: [id])
+  menuItemId String?   @map("menu_item_id")
+  Tag        Tag?      @relation(fields: [tagId], references: [id])
+  tagId      String?   @map("tag_id")
+  deletedAt  DateTime? @map("deleted_at")
+  createdAt  DateTime  @map("created_at")
+  updatedAt  DateTime  @default(now()) @updatedAt @map("updated_at")
+
+  @@map("menu_item_tags")
+}
+
+model Tag {
+  id          String        @id @default(uuid())
+  name        String
+  public      Boolean       @default(false)
+  colorHEX    String        @default("#e0e0e0") @map("color_hex")
+  deletedAt   DateTime?     @map("deleted_at")
+  createdAt   DateTime      @map("created_at")
+  updatedAt   DateTime      @default(now()) @updatedAt @map("updated_at")
+  MenuItemTag MenuItemTag[]
+
+  @@map("tags")
+}
+
+model Setting {
+  id        String   @id @default(uuid())
+  context   String
+  name      String
+  type      String
+  value     String
+  createdAt DateTime @map("created_at")
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
+
+  @@map("settings")
+}
+
+// model OrderDeliveryTimeLeftOrdersInbound {
+//   id          String    @id @default(uuid())
+//   orderNumber String    @map("order_number")
+//   /// rawData: JSON format of order object
+//   rawData     String?   @map("raw_data")
+//   archivedAt  DateTime? @map("archived_at")
+//   createdAt   DateTime  @map("created_at")
+//   updatedAt   DateTime  @default(now()) @updatedAt @map("updated_at")
+
+//   @@map("odtl_orders_inbound")
+// }
+
+model MogoOrdersInbound {
+  id           String    @id @default(uuid())
+  orderNumber  String    @map("order_number")
+  orderDateStr String?   @map("order_date_str")
+  orderTimeStr String?   @map("order_time_str")
+  /// rawData: JSON format of order object
+  rawData      String?   @map("raw_data")
+  archivedAt   DateTime? @map("archived_at")
+  createdAt    DateTime  @map("created_at")
+  updatedAt    DateTime  @default(now()) @updatedAt @map("updated_at")
+
+  @@map("mogo_orders_inbound")
+}
+
+model Session {
+  id            String          @id @default(uuid())
+  userId        String?         @map("user_id")
+  payload       String?
+  createdAt     DateTime        @map("created_at")
+  updatedAt     DateTime        @default(now()) @updatedAt @map("updated_at")
+  MenuItemLike  MenuItemLike[]
+  MenuItemShare MenuItemShare[]
+
+  @@map("sessions")
+}
