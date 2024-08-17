@@ -1,4 +1,4 @@
-import { LoaderArgs } from "@remix-run/node"
+import { LoaderFunctionArgs } from "@remix-run/node"
 import { XIcon } from "lucide-react"
 import { useState, useRef, useEffect } from "react"
 import { Button } from "~/components/ui/button"
@@ -11,7 +11,7 @@ import { tagPrismaEntity } from "~/domain/tags/tag.prisma.entity.server"
 import { prismaIt } from "~/lib/prisma/prisma-it.server"
 import { badRequest, ok } from "~/utils/http-response.server"
 
-export async function loader({ request }: LoaderArgs) {
+export async function loader({ request }: LoaderFunctionArgs) {
     const env = process.env?.NODE_ENV
     console.log(" =========== executing loader cardapio.search")
 

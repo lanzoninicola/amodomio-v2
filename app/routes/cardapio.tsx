@@ -1,6 +1,6 @@
 import { MenuItemTag, Tag } from "@prisma/client";
 import { HamburgerMenuIcon } from "@radix-ui/react-icons";
-import { HeadersFunction, LoaderArgs, V2_MetaFunction } from "@remix-run/node";
+import { HeadersFunction, LoaderFunctionArgs, MetaFunction } from "@remix-run/node";
 import { Link, Outlet, useLoaderData, useLocation, useSearchParams } from "@remix-run/react";
 import { LayoutList } from "lucide-react";
 import { LayoutTemplate } from "lucide-react";
@@ -58,7 +58,7 @@ export interface CardapioOutletContext {
     items: MenuItemWithAssociations[]
 }
 
-export const meta: V2_MetaFunction = ({ data }) => {
+export const meta: MetaFunction = ({ data }) => {
     return [
         { title: "Cardápio A Modo Mio - Pizzaria Italiana em Pato Branco" },
         { name: "description", content: "É a pizza! Italiana! Um sabor que você nunca experimentou! Descubra no nosso cardápio as melhores pizzas da cidade. Experimente e saboreie a verdadeira italianidade em Pato Branco." },

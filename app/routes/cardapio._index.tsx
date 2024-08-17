@@ -1,4 +1,4 @@
-import { ActionArgs, HeadersFunction, LoaderArgs } from "@remix-run/node";
+import { ActionFunctionArgs, HeadersFunction, LoaderFunctionArgs } from "@remix-run/node";
 import { useLoaderData, useSearchParams } from "@remix-run/react";
 import React, { useState, useRef, useCallback, useEffect } from "react";
 import { Separator } from "~/components/ui/separator";
@@ -19,7 +19,7 @@ export const headers: HeadersFunction = () => ({
     'Cache-Control': 's-maxage=1, stale-while-revalidate=59',
 });
 
-export async function loader({ request }: LoaderArgs) {
+export async function loader({ request }: LoaderFunctionArgs) {
     const env = process.env?.NODE_ENV
     console.log(" =========== executing loader cardapio._index")
 
@@ -71,7 +71,7 @@ export async function loader({ request }: LoaderArgs) {
 
 }
 
-export async function action({ request }: ActionArgs) {
+export async function action({ request }: ActionFunctionArgs) {
     let formData = await request.formData();
     const { _action, ...values } = Object.fromEntries(formData);
 
